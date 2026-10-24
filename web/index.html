@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nummer toevoegen — Radiostation</title>
+<style>
+  :root {
+    --bg: #15120f;
+    --panel: #1d1812;
+    --line: #35291c;
+    --amber: #e8a33d;
+    --amber-dim: #8a6a2f;
+    --text: #efe6d8;
+    --text-dim: #9b8f7c;
+    --error: #c8573f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(232,163,61,0.08), transparent);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 80px;
+  }
+
+  main {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .dial {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .dial .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 10px 2px rgba(232,163,61,0.6);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+
+  .dial span {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--amber-dim);
+  }
+
+  h1 {
+    font-size: 30px;
+    line-height: 1.15;
+    margin: 0 0 8px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  p.lead {
+    margin: 0 0 36px;
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 42ch;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .field .hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    opacity: 0.7;
+  }
+
+  input[type="text"],
+  input[type="url"],
+  select {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 11px 12px;
+    font-size: 15px;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  input::placeholder { color: #5e5340; }
+
+  input[type="file"] {
+    background: var(--panel);
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 11px 12px;
+    font-size: 14px;
+    color: var(--text-dim);
+    font-family: inherit;
+  }
+
+  input[type="file"]::file-selector-button {
+    background: var(--amber-dim);
+    color: #1a1308;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--amber-dim);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  select {
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M0 0l5 6 5-6z" fill="%239b8f7c"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+
+  button {
+    margin-top: 10px;
+    background: var(--amber);
+    color: #241a08;
+    border: none;
+    border-radius: 6px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+
+  button:hover { background: #f0b55a; }
+  button:active { transform: scale(0.99); }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  .status {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    display: none;
+  }
+
+  .status.show { display: block; }
+
+  .status.ok {
+    background: rgba(232,163,61,0.1);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+  }
+
+  .status.err {
+    background: rgba(200,87,63,0.1);
+    border: 1px solid var(--error);
+    color: #e58d7c;
+  }
+
+  footer {
+    margin-top: 40px;
+    font-size: 12px;
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .tab {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 4px;
+    margin-right: 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-top: 0;
+  }
+
+  .tab.active {
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .lib-section h3 {
+    font-size: 13px;
+    color: var(--amber-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 24px 0 10px;
+  }
+
+  .lib-section h3:first-child { margin-top: 0; }
+
+  .lib-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+
+  .lib-item .name { color: var(--text); }
+  .lib-item .meta { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+
+  .lib-empty { color: var(--text-dim); font-size: 13px; padding: 8px 0; }
+</style>
+</head>
+<body>
+<main>
+  <div class="dial"><span class="dot"></span><span>ON AIR — TOEVOEGEN</span></div>
+  <h1 id="pageTitle">Nummer toevoegen</h1>
+  <p class="lead" id="pageLead">Dit nummer komt in de playlist van het radiostation te staan. De in-game computer haalt het vanzelf op.</p>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="song">Nummer</button>
+    <button class="tab" data-tab="voice">Pratend stukje</button>
+    <button class="tab" data-tab="jingle">Jingle</button>
+    <button class="tab" data-tab="library">Bibliotheek</button>
+  </div>
+
+  <!-- NUMMER -->
+  <div class="panel active" id="panel-song">
+    <form id="songForm">
+      <div class="field">
+        <label for="name">Naam nummer</label>
+        <input type="text" id="name" required placeholder="Smoorverliefd">
+      </div>
+      <div class="field">
+        <label for="artist">Artiest</label>
+        <input type="text" id="artist" required placeholder="Snelle">
+      </div>
+      <div class="field">
+        <label for="file">Audiobestand (.mp3 of .dfpwm)</label>
+        <input type="file" id="file" accept=".dfpwm,.mp3,audio/*" required>
+        <span class="hint">Een MP3 wordt automatisch in je browser naar DFPWM omgezet. De website host en analyseert het verder zelf.</span>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="category">Categorie</label>
+          <select id="category">
+            <option value="A">A — power-rotatie</option>
+            <option value="B">B</option>
+            <option value="C" selected>C — nieuwkomer</option>
+            <option value="Recents">Recents</option>
+            <option value="Golds">Golds</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="tempo">Tempo</label>
+          <select id="tempo">
+            <option value="fast">Snel</option>
+            <option value="medium" selected>Gemiddeld</option>
+            <option value="slow">Langzaam</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="style">Stijl</label>
+        <input type="text" id="style" placeholder="rock, dance, pop, ballad — mag leeg">
+      </div>
+      <div class="field">
+        <label for="holiday">Feestdag</label>
+        <input type="text" id="holiday" placeholder="kerst, halloween — mag leeg">
+      </div>
+      <button type="submit">Toevoegen aan playlist</button>
+    </form>
+  </div>
+
+  <!-- PRATEND STUKJE -->
+  <div class="panel" id="panel-voice">
+    <form id="voiceForm">
+      <div class="field">
+        <label for="voiceName">Naam pratend stukje</label>
+        <input type="text" id="voiceName" required placeholder="Ochtendgroet">
+      </div>
+      <div class="field">
+        <label for="voiceFile">Audiobestand (.mp3 of .dfpwm)</label>
+        <input type="file" id="voiceFile" accept=".dfpwm,.mp3,audio/*" required>
+      </div>
+      <button type="submit">Toevoegen als pratend stukje</button>
+    </form>
+  </div>
+
+  <!-- JINGLE -->
+  <div class="panel" id="panel-jingle">
+    <form id="jingleForm">
+      <div class="field">
+        <label for="jingleName">Naam jingle/station-ID</label>
+        <input type="text" id="jingleName" required placeholder="Station ID kort">
+      </div>
+      <div class="field">
+        <label for="jingleFile">Audiobestand (.mp3 of .dfpwm)</label>
+        <input type="file" id="jingleFile" accept=".dfpwm,.mp3,audio/*" required>
+      </div>
+      <button type="submit">Toevoegen als jingle</button>
+    </form>
+  </div>
+
+  <!-- BIBLIOTHEEK -->
+  <div class="panel" id="panel-library">
+    <div id="libraryContent" style="color: var(--text-dim); font-size: 14px;">Laden...</div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <footer>Komt terecht in de data/*.json-bestanden op GitHub.</footer>
+</main>
+
+<script>
+  const statusEl = document.getElementById('status');
+
+  // Tab-navigatie
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  const titles = {
+    song: ['Nummer toevoegen', 'Dit nummer komt in de playlist van het radiostation te staan. De in-game computer haalt het vanzelf op.'],
+    voice: ['Pratend stukje toevoegen', 'Een kort dj-praatje dat tussen de nummers door komt.'],
+    jingle: ['Jingle toevoegen', 'Een kort herkenningsgeluidje/station-ID dat vaker terugkomt dan de pratende stukjes.'],
+    library: ['Bibliotheek', 'Wat er nu in de playlist, pratende stukjes en jingles van het station staat.'],
+  };
+
+  let libraryLoaded = false;
+
+  async function loadLibrary() {
+    const el = document.getElementById('libraryContent');
+    el.textContent = 'Laden...';
+    try {
+      const resp = await fetch('/api/library');
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Onbekende fout');
+
+      const section = (title, items, renderItem) => {
+        const body = items.length
+          ? items.map(renderItem).join('')
+          : '<div class="lib-empty">Nog niks</div>';
+        return `<div class="lib-section"><h3>${title} (${items.length})</h3>${body}</div>`;
+      };
+
+      el.innerHTML =
+        section('Nummers', data.playlist || [], (t) => `
+          <div class="lib-item">
+            <div class="name">${t.name} — ${t.artist}</div>
+            <div class="meta">${t.category || '?'} · ${t.tempo || '?'}${t.style ? ' · ' + t.style : ''}${t.holiday ? ' · ' + t.holiday.toUpperCase() : ''}</div>
+          </div>`) +
+        section('Pratende stukjes', data.voicetracks || [], (v) => `
+          <div class="lib-item"><div class="name">${v.name}</div></div>`) +
+        section('Jingles', data.jingles || [], (j) => `
+          <div class="lib-item"><div class="name">${j.name}</div></div>`);
+    } catch (err) {
+      el.textContent = 'Kon bibliotheek niet laden: ' + err.message;
+    }
+  }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => t.classList.remove('active'));
+      panels.forEach((p) => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+      document.getElementById('pageTitle').textContent = titles[tab.dataset.tab][0];
+      document.getElementById('pageLead').textContent = titles[tab.dataset.tab][1];
+      statusEl.className = 'status';
+
+      if (tab.dataset.tab === 'library' && !libraryLoaded) {
+        libraryLoaded = true;
+        loadLibrary();
+      }
+    });
+  });
+
+  function setButtonText(form, text) {
+    form.querySelector('button[type="submit"]').textContent = text;
+  }
+
+  // Upload het bestand (host het automatisch), detecteer stilte aan
+  // het begin, en stuur dan pas het hele formulier door - de
+  // gebruiker hoeft alleen het bestand te kiezen.
+  // ---- MP3 (of ander audioformaat) -> DFPWM, volledig in de browser ----
+  // Zelfde algoritme als cc.audio.dfpwm in CC:Tweaked (DFPWM1a).
+  function dfpwmEncode(samples) {
+    const PREC = 10;
+    const PREC_POW = 1 << PREC;
+    const PREC_POW_HALF = 1 << (PREC - 1);
+    const STRENGTH_MIN = 1 << (PREC - 8 + 1);
+
+    let charge = 0, strength = 0, previousBit = false, previousCharge = 0;
+    const out = new Uint8Array(Math.ceil(samples.length / 8));
+
+    for (let i = 0; i < out.length; i++) {
+      let byte = 0;
+      for (let j = 0; j < 8; j++) {
+        const inp = samples[i * 8 + j] || 0;
+        const currentBit = inp > previousCharge || (inp === previousCharge && inp === 127);
+        byte = (byte >> 1) + (currentBit ? 128 : 0);
+
+        const target = currentBit ? 127 : -128;
+        let nextCharge = charge + Math.floor((strength * (target - charge) + PREC_POW_HALF) / PREC_POW);
+        if (nextCharge === charge && nextCharge !== target) nextCharge += currentBit ? 1 : -1;
+
+        const same = currentBit === previousBit;
+        const z = same ? PREC_POW - 1 : 0;
+        let nextStrength = strength;
+        if (nextStrength !== z) nextStrength += same ? 1 : -1;
+        if (nextStrength < STRENGTH_MIN) nextStrength = STRENGTH_MIN;
+
+        charge = nextCharge;
+        strength = nextStrength;
+        previousBit = currentBit;
+        previousCharge = charge;
+      }
+      out[i] = byte;
+    }
+    return out;
+  }
+
+  async function convertToDfpwm(file, form) {
+    setButtonText(form, 'Omzetten naar DFPWM...');
+    const arrayBuf = await file.arrayBuffer();
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const decodeCtx = new AudioCtx();
+    let decoded;
+    try {
+      decoded = await decodeCtx.decodeAudioData(arrayBuf);
+    } catch {
+      throw new Error('Deze browser kan het audiobestand niet lezen');
+    } finally {
+      decodeCtx.close();
+    }
+
+    // naar 48kHz mono (dat verwacht CC:Tweaked / Simple Radio)
+    const frames = Math.ceil(decoded.duration * 48000);
+    const offline = new OfflineAudioContext(1, frames, 48000);
+    const source = offline.createBufferSource();
+    source.buffer = decoded;
+    source.connect(offline.destination);
+    source.start();
+    const rendered = await offline.startRendering();
+    const pcm = rendered.getChannelData(0);
+
+    const int8 = new Int8Array(pcm.length);
+    for (let i = 0; i < pcm.length; i++) {
+      let v = Math.round(pcm[i] * 127);
+      int8[i] = v > 127 ? 127 : v < -128 ? -128 : v;
+    }
+
+    const bytes = dfpwmEncode(int8);
+    const newName = file.name.replace(/\.[^.]+$/, '') + '.dfpwm';
+    return new File([bytes], newName, { type: 'application/octet-stream' });
+  }
+
+  async function uploadAndAnalyze(form, fileInput) {
+    let file = fileInput.files[0];
+    if (!file) throw new Error('Geen bestand gekozen');
+
+    if (!file.name.toLowerCase().endsWith('.dfpwm')) {
+      file = await convertToDfpwm(file, form);
+    }
+
+    // de uploadroute op Vercel accepteert max ~4,5 MB (ongeveer 12 minuten audio)
+    if (file.size > 4.4 * 1024 * 1024) {
+      throw new Error('Dit nummer is te lang (max ongeveer 12 minuten)');
+    }
+
+    setButtonText(form, 'Uploaden...');
+    const uploadForm = new FormData();
+    uploadForm.append('file', file);
+    const uploadResp = await fetch('/api/upload', { method: 'POST', body: uploadForm });
+    const uploadData = await uploadResp.json();
+    if (!uploadResp.ok) throw new Error(uploadData.error || 'Upload mislukt');
+
+    setButtonText(form, 'Stilte detecteren...');
+    let skipBytes = 0;
+    try {
+      const silenceResp = await fetch('/api/detect-silence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: uploadData.url }),
+      });
+      const silenceData = await silenceResp.json();
+      if (silenceResp.ok) skipBytes = silenceData.skipBytes || 0;
+    } catch {
+      // stilte-detectie is een bonus, geen harde vereiste - gewoon doorgaan zonder
+    }
+
+    return { url: uploadData.url, skipBytes };
+  }
+
+  async function submitForm(endpoint, buildPayload, successLabel, form, fileInput, resetExtra) {
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    statusEl.className = 'status';
+
+    try {
+      const { url, skipBytes } = await uploadAndAnalyze(form, fileInput);
+      setButtonText(form, 'Toevoegen...');
+
+      const payload = buildPayload(url, skipBytes);
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Onbekende fout');
+
+      statusEl.textContent = `"${successLabel}" is toegevoegd. Het komt binnen op de radio zodra die opnieuw synchroniseert.`;
+      statusEl.className = 'status show ok';
+      form.reset();
+      if (resetExtra) resetExtra();
+    } catch (err) {
+      statusEl.textContent = 'Kon niet toevoegen: ' + err.message;
+      statusEl.className = 'status show err';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+
+  document.getElementById('songForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name').value.trim();
+    const artist = document.getElementById('artist').value.trim();
+    const category = document.getElementById('category').value;
+    const tempo = document.getElementById('tempo').value;
+    const style = document.getElementById('style').value.trim();
+    const holiday = document.getElementById('holiday').value.trim().toLowerCase();
+
+    submitForm(
+      '/api/add-song',
+      (url, skipBytes) => ({ name, artist, url, category, tempo, style, holiday, skipBytes }),
+      name,
+      e.target,
+      document.getElementById('file'),
+      () => {
+        document.getElementById('category').value = 'C';
+        document.getElementById('tempo').value = 'medium';
+      }
+    );
+  });
+
+  document.getElementById('voiceForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('voiceName').value.trim();
+    submitForm(
+      '/api/add-voicetrack',
+      (url) => ({ name, url }),
+      name,
+      e.target,
+      document.getElementById('voiceFile')
+    );
+  });
+
+  document.getElementById('jingleForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('jingleName').value.trim();
+    submitForm(
+      '/api/add-jingle',
+      (url) => ({ name, url }),
+      name,
+      e.target,
+      document.getElementById('jingleFile')
+    );
+  });
+</script>
+</body>
+</html>
